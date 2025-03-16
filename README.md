@@ -1,8 +1,22 @@
 # Dashboard Analisis Kualitas Udara
 
-## Deskripsi
+## Deskripsi Proyek
 
-Dashboard ini menampilkan analisis kualitas udara berdasarkan dataset PRSA yang mencakup beberapa stasiun pemantauan di berbagai lokasi. Dashboard dibuat menggunakan Streamlit dan menyajikan berbagai visualisasi data terkait polutan udara.
+Dashboard ini bertujuan untuk menganalisis kualitas udara di Beijing berdasarkan data dari berbagai stasiun pemantauan dalam periode 2013 hingga 2017. Data yang digunakan berasal dari dataset PRSA, yang mencakup parameter polusi udara seperti PM2.5, PM10, SO2, NO2, CO, dan O3. Dengan menggunakan Streamlit, proyek ini menyajikan berbagai visualisasi data interaktif yang membantu dalam memahami tren kualitas udara serta faktor-faktor yang mempengaruhi polusi.
+
+## Tujuan Analisis
+
+1. **Mengetahui tren kualitas udara (PM2.5) dari tahun ke tahun.**
+2. **Mengidentifikasi lokasi dengan tingkat polusi tertinggi dan terendah.**
+3. **Menganalisis hubungan antara variabel meteorologi (suhu, kelembaban, tekanan udara) dengan tingkat polusi.**
+4. **Menyediakan visualisasi interaktif untuk eksplorasi data lebih lanjut.**
+
+## Fitur Dashboard
+
+- **Tren Polusi:** Menampilkan grafik tren PM2.5 dari waktu ke waktu.
+- **Perbandingan Antar Lokasi:** Diagram boxplot yang membandingkan tingkat polusi antar stasiun pemantauan.
+- **Analisis Musiman:** Grafik yang menunjukkan pola polusi berdasarkan musim.
+- **Peta Interaktif:** Heatmap lokasi polusi tertinggi dan terendah menggunakan Folium.
 
 ## Struktur Direktori
 
@@ -23,7 +37,7 @@ Dashboard ini menampilkan analisis kualitas udara berdasarkan dataset PRSA yang 
 ### 1. Clone Repository (Jika menggunakan Git)
 
 ```bash
-git clone <repository_url>
+git clone <https://github.com/Kyyneko/AirQualityDashboard.git>
 cd dashboard
 ```
 
