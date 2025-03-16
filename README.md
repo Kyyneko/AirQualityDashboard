@@ -22,6 +22,7 @@ Dashboard ini bertujuan untuk menganalisis kualitas udara di Beijing berdasarkan
 
 ```
 |-- dashboard/
+    |-- main_data.csv # Dataset hasil gabungan dari seluruh dataset
     |-- dashboard.py  # Script utama Streamlit
     |-- data/
         |-- PRSA_Data_Aotizhongxin_20130301-20170228.csv
