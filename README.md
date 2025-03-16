@@ -38,7 +38,7 @@ Dashboard ini bertujuan untuk menganalisis kualitas udara di Beijing berdasarkan
 ### 1. Clone Repository (Jika menggunakan Git)
 
 ```bash
-git clone <https://github.com/Kyyneko/AirQualityDashboard.git>
+git clone https://github.com/Kyyneko/AirQualityDashboard.git
 cd dashboard
 ```
 
