@@ -73,5 +73,5 @@ Setelah deploy, URL dashboard akan tersedia di `url.txt`.
 ## `url.txt`
 
 ```
-https://your-dashboard-url.streamlit.app/
+https://airqualitydashboard-3bsdh5ahdlepdp3wwuyugw.streamlit.app/
 ```
