@@ -28,7 +28,6 @@ def load_data(files):
     drop_cols = ["year", "month", "day", "hour", "No"]
     df.drop(columns=[col for col in drop_cols if col in df.columns], inplace=True)
 
-    # ✅ Tambahkan kolom 'month_year' agar tersedia di semua tampilan
     df["month_year"] = df["datetime"].dt.to_period("M").astype(str)
 
     return df
