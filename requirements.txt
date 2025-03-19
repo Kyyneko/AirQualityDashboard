@@ -4,6 +4,7 @@ matplotlib
 seaborn
 folium
 missingno
-datetime
 streamlit
 streamlit_folium
+plotly
+nbformat

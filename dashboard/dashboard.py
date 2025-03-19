@@ -1,119 +1,138 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+import plotly.express as px
 import folium
-import os
 from streamlit_folium import folium_static
 
-# Fungsi untuk menggabungkan semua dataset dalam folder 'data/'
-@st.cache_data
-def load_data():
-    folder_path = "data/"
-    files = [f for f in os.listdir(folder_path) if f.endswith(".csv")]
+# =========================================================
+# 📂 MEMUAT DATA
+# =========================================================
 
+file_paths = [
+    "data/PRSA_Data_Aotizhongxin_20130301-20170228.csv",
+    "data/PRSA_Data_Changping_20130301-20170228.csv",
+    "data/PRSA_Data_Dingling_20130301-20170228.csv",
+    "data/PRSA_Data_Dongsi_20130301-20170228.csv"
+]
+
+@st.cache_data
+def load_data(files):
     df_list = []
     for file in files:
-        df_temp = pd.read_csv(os.path.join(folder_path, file))
+        df_temp = pd.read_csv(file)
         df_list.append(df_temp)
 
     df = pd.concat(df_list, ignore_index=True)
-
-    # Konversi ke datetime
     df["datetime"] = pd.to_datetime(df[["year", "month", "day", "hour"]])
 
-    # Hapus kolom yang tidak diperlukan
     drop_cols = ["year", "month", "day", "hour", "No"]
     df.drop(columns=[col for col in drop_cols if col in df.columns], inplace=True)
 
+    # ✅ Tambahkan kolom 'month_year' agar tersedia di semua tampilan
+    df["month_year"] = df["datetime"].dt.to_period("M").astype(str)
+
     return df
 
-# Load dataset
-df = load_data()
+df = load_data(file_paths)
 
-# Sidebar: Pilih stasiun
-st.sidebar.title("Filter Data")
-station_selected = st.sidebar.selectbox("Pilih Stasiun", df["station"].unique())
+# =========================================================
+# 📌 SIDEBAR NAVIGASI
+# =========================================================
+st.sidebar.title("📌 Navigasi Dashboard")
+menu = st.sidebar.radio("Pilih Visualisasi", [
+    "📈 Analisis Polutan PM2.5",
+    "📊 Analisis Polutan Lain",
+    "🌍 Tren Polutan di Seluruh Beijing"
+])
 
-# Filter data berdasarkan stasiun
-df_filtered = df[df["station"] == station_selected]
+st.sidebar.markdown("---")
+st.sidebar.info("Dashboard ini hanya mengambil data stasiun pemantauan udara di **Beijing, Tiongkok**.")
 
-# Header aplikasi
-st.title("Dashboard Analisis Kualitas Udara")
-st.write(f"Menampilkan data dari stasiun **{station_selected}**")
+# =========================================================
+# 📈 TAMPILAN 1: Tren PM2.5 (Rata-rata & Polusi Tertinggi/Terendah)
+# =========================================================
+if menu == "📈 Analisis Polutan PM2.5":
+    st.title("📈 Tren Rata-rata PM2.5 di Beijing")
 
-# Visualisasi Tren PM2.5
-st.subheader("Tren PM2.5 dari Tahun ke Tahun")
-fig, ax = plt.subplots(figsize=(10, 5))
-ax.plot(df_filtered["datetime"], df_filtered["PM2.5"], label="PM2.5", color='red')
-ax.set_xlabel("Tanggal")
-ax.set_ylabel("Konsentrasi PM2.5")
-ax.legend()
-st.pyplot(fig)
+    df_avg_pm25 = df.groupby(["month_year", "station"])["PM2.5"].mean().reset_index()
 
-# Statistik Deskriptif
-def descriptive_stats(data, column):
-    return {
-        "Rata-rata": data[column].mean(),
-        "Minimum": data[column].min(),
-        "Maksimum": data[column].max()
+    fig = px.line(df_avg_pm25, x="month_year", y="PM2.5", color="station", markers=True,
+                  title="Tren Rata-rata PM2.5 di Beijing",
+                  labels={"month_year": "Tahun - Bulan", "PM2.5": "Kadar PM2.5"})
+    fig.update_layout(xaxis=dict(tickangle=45), legend_title="Stasiun")
+    st.plotly_chart(fig)
+
+    st.markdown("---")
+    st.subheader("📍 Lokasi dengan Polusi Tertinggi dan Terendah")
+
+    avg_pm25 = df.groupby("station")["PM2.5"].mean().sort_values(ascending=False)
+    highest_pollution = avg_pm25.idxmax()
+    lowest_pollution = avg_pm25.idxmin()
+
+    st.write(f"🌆 **Stasiun dengan Polusi Tertinggi:** {highest_pollution} ({avg_pm25.max():.2f} µg/m³)")
+    st.write(f"🌿 **Stasiun dengan Polusi Terendah:** {lowest_pollution} ({avg_pm25.min():.2f} µg/m³)")
+
+    fig3 = px.bar(avg_pm25, x=avg_pm25.index, y=avg_pm25.values, color=avg_pm25.index,
+                  title="Rata-rata PM2.5 di Berbagai Stasiun",
+                  labels={"x": "Stasiun", "y": "PM2.5"})
+    fig3.update_layout(xaxis=dict(tickangle=45))
+    st.plotly_chart(fig3)
+
+# =========================================================
+# 📊 TAMPILAN 2: Analisis Polutan Lain (Pilihan Stasiun di Dalam)
+# =========================================================
+elif menu == "📊 Analisis Polutan Lain":
+    st.title("📊 Analisis Polutan Lain")
+
+    # Pilihan Stasiun ADA DI DALAM HALAMAN INI
+    station_selected = st.selectbox("📍 Pilih Stasiun", df["station"].unique())
+    df_filtered = df[df["station"] == station_selected]
+
+    st.subheader("📋 Statistik Deskriptif Polutan")
+    polutan = ["PM10", "SO2", "NO2", "CO", "O3"]
+    st.dataframe(df_filtered[polutan].describe().T)
+
+    st.subheader(f"📈 Tren Rata-rata Polutan Lain di {station_selected}")
+    polutan_selected = st.selectbox("Pilih Polutan", polutan)
+
+    df_avg_polutan = df_filtered.groupby(["month_year"])[polutan_selected].mean().reset_index()
+
+    fig2 = px.line(df_avg_polutan, x="month_year", y=polutan_selected, markers=True,
+                   title=f"Tren Rata-rata {polutan_selected} di {station_selected}",
+                   labels={"month_year": "Tahun - Bulan", polutan_selected: f"Kadar {polutan_selected}"})
+    fig2.update_layout(xaxis=dict(tickangle=45))
+    st.plotly_chart(fig2)
+
+# =========================================================
+# 🌍 TAMPILAN 3: Tren Polutan di Seluruh Beijing
+# =========================================================
+elif menu == "🌍 Tren Polutan di Seluruh Beijing":
+    st.title("🌍 Tren Rata-rata Polutan di Seluruh Beijing")
+
+    polutan_all_selected = st.selectbox("Pilih Polutan untuk Semua Stasiun", ["PM2.5","PM10", "SO2", "NO2", "CO", "O3"])
+
+    df_avg_polutan_all = df.groupby(["month_year", "station"])[polutan_all_selected].mean().reset_index()
+
+    fig4 = px.line(df_avg_polutan_all, x="month_year", y=polutan_all_selected, color="station", markers=True,
+                   title=f"Tren Rata-rata {polutan_all_selected} di Seluruh Beijing",
+                   labels={"month_year": "Tahun - Bulan", polutan_all_selected: f"Kadar {polutan_all_selected}"})
+    fig4.update_layout(xaxis=dict(tickangle=45), legend_title="Stasiun")
+    st.plotly_chart(fig4)
+
+    st.markdown("---")
+    st.subheader("🗺️ Peta Lokasi Stasiun Pemantauan")
+
+    station_coords = {
+        "Aotizhongxin": [39.9828, 116.4074],
+        "Changping": [40.2181, 116.2210],
+        "Dingling": [40.2906, 116.2202],
+        "Dongsi": [39.9289, 116.4173]
     }
 
-st.subheader("Statistik Deskriptif Polutan")
-polutan = ["PM2.5", "PM10", "SO2", "NO2", "CO", "O3"]
-st.dataframe(pd.DataFrame({
-    p: descriptive_stats(df_filtered, p) for p in polutan
-}).T)
+    m = folium.Map(location=[39.9, 116.4], zoom_start=10)
+    for station, coords in station_coords.items():
+        folium.Marker(location=coords, popup=station).add_to(m)
 
-# Opsi untuk menampilkan polutan lain
-st.subheader("Visualisasi Polutan Lain")
-polutan_selected = st.selectbox("Pilih Polutan", polutan)
-fig2, ax2 = plt.subplots(figsize=(10, 5))
-ax2.plot(df_filtered["datetime"], df_filtered[polutan_selected], label=polutan_selected, color='blue')
-ax2.set_xlabel("Tanggal")
-ax2.set_ylabel(f"Konsentrasi {polutan_selected}")
-ax2.legend()
-st.pyplot(fig2)
+    folium_static(m)
 
-# Menampilkan lokasi dengan polutan tertinggi
-st.subheader("Peta Lokasi dengan PM2.5 Tertinggi")
-
-# Kelompokkan data berdasarkan stasiun
-df_grouped = df.groupby("station")[["PM2.5", "PM10", "SO2", "NO2", "CO", "O3"]].mean()
-
-# Koordinat stasiun (contoh, bisa diperbarui dengan data yang benar)
-station_coords = {
-    "Aotizhongxin": [39.9828, 116.4074],
-    "Changping": [40.2181, 116.2210],
-    "Dingling": [40.2906, 116.2202],
-    "Dongsi": [39.9289, 116.4173],
-    "Guanyuan": [39.9336, 116.3655],
-    "Gucheng": [39.9001, 116.2297],
-    "Huairou": [40.4175, 116.6333],
-    "Nongzhanguan": [39.9671, 116.4617],
-    "Shunyi": [40.1279, 116.6535],
-    "Tiantan": [39.8817, 116.4145],
-    "Wanliu": [39.9793, 116.3077],
-    "Wanshouxigong": [39.8737, 116.3528]
-}
-
-# Buat peta dengan folium
-m = folium.Map(location=[39.9, 116.4], zoom_start=10)
-
-# Tambahkan marker untuk setiap stasiun
-for station, coords in station_coords.items():
-    if station in df_grouped.index:
-        folium.CircleMarker(
-            location=coords,
-            radius=df_grouped.loc[station, "PM2.5"] / 10,  # Skala radius
-            color="red",
-            fill=True,
-            fill_color="red",
-            fill_opacity=0.6,
-            popup=f"{station}: {df_grouped.loc[station, 'PM2.5']:.2f} µg/m³"
-        ).add_to(m)
-
-# Tampilkan peta di Streamlit
-folium_static(m)
-
-st.write("Sumber data: Air Quality Dataset")
+    st.write("Sumber data: Air Quality Dataset")
