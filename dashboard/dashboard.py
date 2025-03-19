@@ -40,8 +40,8 @@ df = load_data(file_paths)
 # =========================================================
 st.sidebar.title("📌 Navigasi Dashboard")
 menu = st.sidebar.radio("Pilih Visualisasi", [
-    "📈 Analisis Polutan PM2.5",
-    "📊 Analisis Polutan Lain",
+    "📈 Analisis PM2.5 di Beijing",
+    "📊 Analisis Polutan Ditiap Stasiun",
     "🌍 Tren Polutan di Seluruh Beijing"
 ])
 
@@ -51,7 +51,7 @@ st.sidebar.info("Dashboard ini hanya mengambil data stasiun pemantauan udara di 
 # =========================================================
 # 📈 TAMPILAN 1: Tren PM2.5 (Rata-rata & Polusi Tertinggi/Terendah)
 # =========================================================
-if menu == "📈 Analisis Polutan PM2.5":
+if menu == "📈 Analisis PM2.5 di Beijing":
     st.title("📈 Tren Rata-rata PM2.5 di Beijing")
 
     df_avg_pm25 = df.groupby(["month_year", "station"])["PM2.5"].mean().reset_index()
@@ -78,18 +78,20 @@ if menu == "📈 Analisis Polutan PM2.5":
     fig3.update_layout(xaxis=dict(tickangle=45))
     st.plotly_chart(fig3)
 
+    st.write("Sumber data: Air Quality Dataset")
+
 # =========================================================
-# 📊 TAMPILAN 2: Analisis Polutan Lain (Pilihan Stasiun di Dalam)
+# 📊 TAMPILAN 2: Analisis Polutan Ditiap Stasiun (Pilihan Stasiun di Dalam)
 # =========================================================
-elif menu == "📊 Analisis Polutan Lain":
-    st.title("📊 Analisis Polutan Lain")
+elif menu == "📊 Analisis Polutan Ditiap Stasiun":
+    st.title("📊 Analisis Polutan Ditiap Stasiun")
 
     # Pilihan Stasiun ADA DI DALAM HALAMAN INI
     station_selected = st.selectbox("📍 Pilih Stasiun", df["station"].unique())
     df_filtered = df[df["station"] == station_selected]
 
     st.subheader("📋 Statistik Deskriptif Polutan")
-    polutan = ["PM10", "SO2", "NO2", "CO", "O3"]
+    polutan = ["PM2.5","PM10", "SO2", "NO2", "CO", "O3"]
     st.dataframe(df_filtered[polutan].describe().T)
 
     st.subheader(f"📈 Tren Rata-rata Polutan Lain di {station_selected}")
@@ -102,6 +104,8 @@ elif menu == "📊 Analisis Polutan Lain":
                    labels={"month_year": "Tahun - Bulan", polutan_selected: f"Kadar {polutan_selected}"})
     fig2.update_layout(xaxis=dict(tickangle=45))
     st.plotly_chart(fig2)
+
+    st.write("Sumber data: Air Quality Dataset")
 
 # =========================================================
 # 🌍 TAMPILAN 3: Tren Polutan di Seluruh Beijing
