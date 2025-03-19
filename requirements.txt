@@ -7,4 +7,3 @@ missingno
 streamlit
 streamlit_folium
 plotly
-nbformat
